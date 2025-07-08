@@ -85,3 +85,29 @@ export interface FundSummary {
   monthlyAverage: number;
   topSaver: User | null;
 }
+export interface LoanAnalysis {
+  id: string;
+  userId: string;
+  maxLoanAmount: number;
+  interestRate: number;
+  termMonths: number;
+  monthlyPayment: number;
+  totalPayment: number;
+  totalInterest: number;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface Loan {
+  id: string;
+  userId: string;
+  amount: number;
+  interestRate: number;
+  termMonths: number;
+  monthlyPayment: number;
+  remainingBalance: number;
+  startDate: string;
+  status: 'active' | 'paid' | 'defaulted';
+  createdAt: string;
+  createdBy: string;
+}

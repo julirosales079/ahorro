@@ -5,10 +5,11 @@ import { UserManagement } from './components/UserManagement';
 import { Reports } from './components/Reports';
 import { Settings as SettingsComponent } from './components/Settings';
 import { AuthForm } from './components/AuthForm';
+import { LoanAnalysis } from './components/LoanAnalysis';
 import { Settings as SettingsType, User } from './types';
 import { authService } from './utils/auth';
 
-type Tab = 'dashboard' | 'users' | 'reports' | 'settings';
+type Tab = 'dashboard' | 'users' | 'reports' | 'loans' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -75,6 +76,7 @@ function App() {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: Home },
     ...(user?.role === 'admin' ? [{ id: 'users', name: 'Usuarios', icon: Users }] : []),
+    ...(user?.role === 'admin' ? [{ id: 'loans', name: 'Análisis de Préstamos', icon: FileText }] : []),
     { id: 'reports', name: 'Reportes', icon: FileText },
     { id: 'settings', name: 'Configuración', icon: Settings },
   ];
@@ -85,6 +87,8 @@ function App() {
         return <FundDashboard darkMode={settings.darkMode} />;
       case 'users':
         return user?.role === 'admin' ? <UserManagement darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
+      case 'loans':
+        return user?.role === 'admin' ? <LoanAnalysis darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'reports':
         return <Reports darkMode={settings.darkMode} />;
       case 'settings':
