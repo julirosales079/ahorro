@@ -24,7 +24,7 @@ const initializeDefaultAdmin = () => {
   if (!adminExists) {
     const defaultAdmin = {
       id: 'admin-default',
-      email: 'julian.rosales@admin.com',
+      email: 'juliandrosalesp@gmail.com',
       name: 'Julian Rosales',
       createdAt: new Date().toISOString(),
       role: 'admin',
