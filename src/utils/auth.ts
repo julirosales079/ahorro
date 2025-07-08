@@ -3,6 +3,17 @@ import { User } from '../types';
 const AUTH_STORAGE_KEY = 'savings-fund-auth';
 const USERS_STORAGE_KEY = 'savings-fund-users';
 
+// Simple hash function for password storage (in production, use proper hashing)
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString();
+};
+
 // Initialize default admin user
 const initializeDefaultAdmin = () => {
   const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
@@ -41,17 +52,6 @@ export interface RegisterData {
   password: string;
   role?: 'admin' | 'member';
 }
-
-// Simple hash function for password storage (in production, use proper hashing)
-const simpleHash = (str: string): string => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return hash.toString();
-};
 
 export const authService = {
   // Get current authenticated user
