@@ -172,7 +172,7 @@ function App() {
                   <p className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {user.email}
                   </p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {user.role === 'admin' ? 'Administrador' : 'Miembro'}
                   </p>
                 </div>
