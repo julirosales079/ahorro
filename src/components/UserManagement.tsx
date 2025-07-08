@@ -21,9 +21,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
   
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '123456',
-    role: 'member' as 'admin' | 'member'
+    password: '123456'
   });
 
   useEffect(() => {
@@ -41,8 +39,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     if (editingUser) {
       const result = authService.updateUser(editingUser.id, {
         name: formData.name,
-        email: formData.email,
-        role: formData.role
+        email: editingUser.email, // Keep existing email
+        role: editingUser.role // Keep existing role
       });
       
       if (result.success) {
@@ -50,7 +48,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
         handleCancel();
       }
     } else {
-      const result = authService.createUser(formData);
+      // Generate email from name
+      const email = `${formData.name.toLowerCase().replace(/\s+/g, '')}@fondo.com`;
+      
+      const result = authService.createUser({
+        name: formData.name,
+        email: email,
+        password: formData.password,
+        role: 'member'
+      });
       
       if (result.success) {
         loadUsers();
@@ -63,9 +69,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      email: user.email,
-      password: '123456',
-      role: user.role
+      password: '123456'
     });
     setShowForm(true);
   };
@@ -75,9 +79,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     setEditingUser(null);
     setFormData({
       name: '',
-      email: '',
-      password: '123456',
-      role: 'member'
+      password: '123456'
     });
   };
 
@@ -193,41 +195,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
               />
             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className={`w-full px-3 py-2 rounded-md border ${
-                  darkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Rol
-              </label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
-                className={`w-full px-3 py-2 rounded-md border ${
-                  darkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              >
-                <option value="member">Miembro</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
-            
             {!editingUser && (
               <div>
                 <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -247,7 +214,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
               </div>
             )}
             
-            <div className="md:col-span-2 flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={handleCancel}

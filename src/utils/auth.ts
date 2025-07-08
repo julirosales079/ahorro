@@ -3,6 +3,33 @@ import { User } from '../types';
 const AUTH_STORAGE_KEY = 'savings-fund-auth';
 const USERS_STORAGE_KEY = 'savings-fund-users';
 
+// Initialize default admin user
+const initializeDefaultAdmin = () => {
+  const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+  
+  // Check if admin already exists
+  const adminExists = users.some((user: any) => user.email === 'julian.rosales@admin.com');
+  
+  if (!adminExists) {
+    const defaultAdmin = {
+      id: 'admin-default',
+      email: 'julian.rosales@admin.com',
+      name: 'Julian Rosales',
+      createdAt: new Date().toISOString(),
+      role: 'admin',
+      isActive: true,
+      totalSavings: 0,
+      passwordHash: simpleHash('1193051330')
+    };
+    
+    users.push(defaultAdmin);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  }
+};
+
+// Initialize on module load
+initializeDefaultAdmin();
+
 export interface LoginCredentials {
   email: string;
   password: string;

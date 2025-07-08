@@ -70,14 +70,14 @@ export const Reports: React.FC<ReportsProps> = ({ darkMode }) => {
             className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
           >
             <Download size={16} />
-            <span>Exportar Usuarios</span>
+            <span>Exportar Excel Usuarios</span>
           </button>
           <button
             onClick={excelService.exportSavingsEntries}
             className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <FileText size={16} />
-            <span>Exportar Movimientos</span>
+            <span>Exportar Excel Movimientos</span>
           </button>
           <label className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
             <Upload size={16} />
