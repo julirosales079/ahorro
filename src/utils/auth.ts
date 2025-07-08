@@ -18,11 +18,12 @@ const simpleHash = (str: string): string => {
 const initializeDefaultAdmin = () => {
   const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
   
-  // Check if admin already exists
-  const adminExists = users.some((user: any) => user.email === 'julian.rosales@admin.com');
+  // Check if admins already exist
+  const julianExists = users.some((user: any) => user.email === 'juliandrosalesp@gmail.com');
+  const cristinaExists = users.some((user: any) => user.email === 'elcripovi_@hotmail.com');
   
-  if (!adminExists) {
-    const defaultAdmin = {
+  if (!julianExists) {
+    const julianAdmin = {
       id: 'admin-default',
       email: 'juliandrosalesp@gmail.com',
       name: 'Julian Rosales',
@@ -33,7 +34,25 @@ const initializeDefaultAdmin = () => {
       passwordHash: simpleHash('1193051330')
     };
     
-    users.push(defaultAdmin);
+    users.push(julianAdmin);
+  }
+  
+  if (!cristinaExists) {
+    const cristinaAdmin = {
+      id: 'admin-cristina',
+      email: 'elcripovi_@hotmail.com',
+      name: 'Cristina Portilla',
+      createdAt: new Date().toISOString(),
+      role: 'admin',
+      isActive: true,
+      totalSavings: 0,
+      passwordHash: simpleHash('30739179')
+    };
+    
+    users.push(cristinaAdmin);
+  }
+  
+  if (!julianExists || !cristinaExists) {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   }
 };
