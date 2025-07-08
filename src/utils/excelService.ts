@@ -1,15 +1,16 @@
 import { SavingsEntry, User } from '../types';
 import { authService } from './auth';
 import { savingsService } from './savingsService';
+import * as XLSX from 'xlsx';
 
 export const excelService = {
-  // Export data to CSV (Excel compatible)
-  exportToCSV: () => {
+  // Export users to Excel with proper table formatting
+  exportUsersToExcel: () => {
     const users = authService.getAllUsersPublic().filter(u => u.role === 'member');
     const entries = savingsService.getAllSavings();
     
-    // Create comprehensive data
-    const exportData = users.map(user => {
+    // Create comprehensive user data
+    const userData = users.map(user => {
       const userEntries = entries.filter(entry => entry.userId === user.id);
       const lastEntry = userEntries[userEntries.length - 1];
       
@@ -26,38 +27,60 @@ export const excelService = {
       };
     });
 
-    // Convert to CSV
-    const headers = Object.keys(exportData[0] || {});
-    const csvContent = [
-      headers.join(','),
-      ...exportData.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof typeof row];
-          return typeof value === 'string' && value.includes(',') 
-            ? `"${value}"` 
-            : value;
-        }).join(',')
-      )
-    ].join('\n');
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Create users worksheet
+    const usersWs = XLSX.utils.json_to_sheet(userData);
+    
+    // Set column widths
+    const usersColWidths = [
+      { wch: 12 }, // ID Usuario
+      { wch: 25 }, // Nombre
+      { wch: 30 }, // Email
+      { wch: 10 }, // Estado
+      { wch: 15 }, // Total Ahorrado
+      { wch: 18 }, // Número de Depósitos
+      { wch: 15 }, // Último Depósito
+      { wch: 15 }, // Último Monto
+      { wch: 18 }  // Fecha de Registro
+    ];
+    usersWs['!cols'] = usersColWidths;
+    
+    // Add table formatting
+    const usersRange = XLSX.utils.decode_range(usersWs['!ref'] || 'A1');
+    usersWs['!autofilter'] = { ref: usersWs['!ref'] };
+    
+    XLSX.utils.book_append_sheet(wb, usersWs, 'Usuarios');
 
-    // Download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `fondo-ahorro-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Create summary worksheet
+    const totalFund = users.reduce((sum, user) => sum + user.totalSavings, 0);
+    const activeUsers = users.filter(u => u.isActive).length;
+    const totalDeposits = entries.length;
+    
+    const summaryData = [
+      { 'Métrica': 'Total de Miembros', 'Valor': users.length },
+      { 'Métrica': 'Miembros Activos', 'Valor': activeUsers },
+      { 'Métrica': 'Total del Fondo', 'Valor': totalFund },
+      { 'Métrica': 'Total de Depósitos', 'Valor': totalDeposits },
+      { 'Métrica': 'Promedio por Miembro', 'Valor': users.length > 0 ? Math.round(totalFund / users.length) : 0 }
+    ];
+    
+    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+    summaryWs['!cols'] = [{ wch: 20 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Resumen');
+
+    // Save file
+    XLSX.writeFile(wb, `fondo-ahorro-usuarios-${new Date().toISOString().split('T')[0]}.xlsx`);
   },
 
-  // Export detailed savings entries
-  exportSavingsEntries: () => {
+  // Export savings entries to Excel with proper table formatting
+  exportSavingsToExcel: () => {
     const entries = savingsService.getAllSavings();
     const users = authService.getAllUsersPublic();
     
-    const exportData = entries.map(entry => {
+    // Create detailed entries data
+    const entriesData = entries.map(entry => {
       const user = users.find(u => u.id === entry.userId);
       const createdBy = users.find(u => u.id === entry.createdBy);
       
@@ -73,33 +96,66 @@ export const excelService = {
       };
     });
 
-    // Convert to CSV
-    const headers = Object.keys(exportData[0] || {});
-    const csvContent = [
-      headers.join(','),
-      ...exportData.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof typeof row];
-          return typeof value === 'string' && value.includes(',') 
-            ? `"${value}"` 
-            : value;
-        }).join(',')
-      )
-    ].join('\n');
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Create entries worksheet
+    const entriesWs = XLSX.utils.json_to_sheet(entriesData);
+    
+    // Set column widths
+    const entriesColWidths = [
+      { wch: 12 }, // ID
+      { wch: 25 }, // Usuario
+      { wch: 30 }, // Email Usuario
+      { wch: 12 }, // Monto
+      { wch: 12 }, // Fecha
+      { wch: 30 }, // Descripción
+      { wch: 20 }, // Registrado Por
+      { wch: 18 }  // Fecha de Registro
+    ];
+    entriesWs['!cols'] = entriesColWidths;
+    
+    // Add table formatting
+    entriesWs['!autofilter'] = { ref: entriesWs['!ref'] };
+    
+    XLSX.utils.book_append_sheet(wb, entriesWs, 'Movimientos');
 
-    // Download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `movimientos-ahorro-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Create monthly summary
+    const monthlyData = entries.reduce((acc, entry) => {
+      const month = new Date(entry.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+      if (!acc[month]) {
+        acc[month] = { month, total: 0, count: 0 };
+      }
+      acc[month].total += entry.amount;
+      acc[month].count += 1;
+      return acc;
+    }, {} as Record<string, { month: string; total: number; count: number }>);
+
+    const monthlyArray = Object.values(monthlyData).map(item => ({
+      'Mes': item.month,
+      'Total Ahorrado': item.total,
+      'Número de Depósitos': item.count,
+      'Promedio por Depósito': Math.round(item.total / item.count)
+    }));
+
+    const monthlyWs = XLSX.utils.json_to_sheet(monthlyArray);
+    monthlyWs['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, monthlyWs, 'Resumen Mensual');
+
+    // Save file
+    XLSX.writeFile(wb, `movimientos-ahorro-${new Date().toISOString().split('T')[0]}.xlsx`);
   },
 
-  // Import data from CSV
+  // Legacy CSV export (keeping for compatibility)
+  exportToCSV: () => {
+    excelService.exportUsersToExcel();
+  },
+
+  exportSavingsEntries: () => {
+    excelService.exportSavingsToExcel();
+  },
+
+  // Import data from CSV (unchanged)
   importFromCSV: (file: File): Promise<{ success: boolean; message: string; imported?: number }> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -125,10 +181,10 @@ export const excelService = {
             });
 
             // Try to import as user data
-            if (row['Nombre'] && row['Email']) {
+            if (row['Nombre']) {
               const result = authService.createUser({
                 name: row['Nombre'],
-                email: row['Email'],
+                email: row['Email'] || `${row['Nombre'].toLowerCase().replace(/\s+/g, '')}@fondo.com`,
                 password: '123456', // Default password
                 role: 'member'
               });
