@@ -18,10 +18,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
   const [savingsAmount, setSavingsAmount] = useState('');
   const [savingsDescription, setSavingsDescription] = useState('');
   const [importMessage, setImportMessage] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState<{ show: boolean; user: User | null }>({ show: false, user: null });
   
   const [formData, setFormData] = useState({
     name: '',
-    password: '123456'
+    password: '123456',
+    role: 'member' as 'admin' | 'member'
   });
 
   useEffect(() => {
@@ -39,8 +41,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     if (editingUser) {
       const result = authService.updateUser(editingUser.id, {
         name: formData.name,
-        email: editingUser.email, // Keep existing email
-        role: editingUser.role // Keep existing role
+        email: editingUser.email,
+        role: formData.role
       });
       
       if (result.success) {
@@ -55,7 +57,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
         name: formData.name,
         email: email,
         password: formData.password,
-        role: 'member'
+        role: formData.role
       });
       
       if (result.success) {
@@ -69,7 +71,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      password: '123456'
+      password: '123456',
+      role: user.role
     });
     setShowForm(true);
   };
@@ -79,7 +82,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     setEditingUser(null);
     setFormData({
       name: '',
-      password: '123456'
+      password: '123456',
+      role: 'member'
     });
   };
 
@@ -88,17 +92,27 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     loadUsers();
   };
 
-  const handleDeleteUser = (userId: string, userName: string) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar al usuario "${userName}"? Esta acción no se puede deshacer y eliminará todos sus ahorros.`)) {
-      const result = authService.deleteUser(userId);
-      
-      if (result.success) {
-        loadUsers();
-      } else {
-        alert(result.error || 'Error al eliminar el usuario');
-      }
+  const handleDeleteUser = (user: User) => {
+    setShowDeleteModal({ show: true, user });
+  };
+
+  const confirmDeleteUser = () => {
+    if (!showDeleteModal.user) return;
+    
+    const result = authService.deleteUser(showDeleteModal.user.id);
+    
+    if (result.success) {
+      loadUsers();
+      setShowDeleteModal({ show: false, user: null });
+    } else {
+      alert(result.error || 'Error al eliminar el usuario');
     }
   };
+
+  const cancelDeleteUser = () => {
+    setShowDeleteModal({ show: false, user: null });
+  };
+
   const handleAddSavings = (userId: string) => {
     const amount = parseFloat(savingsAmount);
     if (amount > 0) {
@@ -206,6 +220,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
               />
             </div>
             
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Rol
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
+                className={`w-full px-3 py-2 rounded-md border ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="member">Miembro</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            
             {!editingUser && (
               <div>
                 <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -225,7 +257,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
               </div>
             )}
             
-            <div className="flex justify-end space-x-3">
+            <div className="md:col-span-2 flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={handleCancel}
@@ -293,7 +325,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
                     {user.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
                   </button>
                   <button
-                    onClick={() => handleDeleteUser(user.id, user.name)}
+                    onClick={() => handleDeleteUser(user)}
                     className="text-red-600 hover:text-red-900 transition-colors"
                   >
                     <Trash2 size={16} />
@@ -392,6 +424,70 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
           <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
           <p className="text-lg">No hay miembros registrados</p>
           <p className="text-sm">Agrega el primer miembro para comenzar</p>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal.show && showDeleteModal.user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`max-w-md w-full rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            {/* Header */}
+            <div className="p-6 border-b border-red-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Eliminar Usuario
+                  </h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Esta acción no se puede deshacer
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-red-900 bg-opacity-20' : 'bg-red-50'} border ${darkMode ? 'border-red-800' : 'border-red-200'} mb-4`}>
+                <p className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-800'} mb-2`}>
+                  <strong>¿Estás seguro de que deseas eliminar este usuario?</strong>
+                </p>
+                <div className={`text-sm ${darkMode ? 'text-red-200' : 'text-red-700'} space-y-1`}>
+                  <p>• <strong>Usuario:</strong> {showDeleteModal.user.name}</p>
+                  <p>• <strong>Email:</strong> {showDeleteModal.user.email}</p>
+                  <p>• <strong>Total ahorrado:</strong> {formatCurrency(showDeleteModal.user.totalSavings)}</p>
+                </div>
+              </div>
+              
+              <div className={`p-3 rounded-lg ${darkMode ? 'bg-yellow-900 bg-opacity-20' : 'bg-yellow-50'} border ${darkMode ? 'border-yellow-800' : 'border-yellow-200'}`}>
+                <p className={`text-sm ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                  <strong>⚠️ Advertencia:</strong> Se eliminarán todos los registros de ahorro asociados a este usuario.
+                </p>
+              </div>
+            </div>
+            {/* Actions */}
+            <div className={`px-6 py-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-end space-x-3`}>
+              <button
+                onClick={cancelDeleteUser}
+                className={`px-4 py-2 rounded-md border ${
+                  darkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 size={16} />
+                <span>Eliminar Usuario</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
