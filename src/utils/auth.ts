@@ -214,6 +214,36 @@ export const authService = {
     return { success: true };
   },
 
+  // Delete user
+  deleteUser: (userId: string): { success: boolean; error?: string } => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      return { success: false, error: 'Solo los administradores pueden eliminar usuarios' };
+    }
+
+    const users = authService.getAllUsers();
+    const userToDelete = users.find(u => u.id === userId);
+    
+    if (!userToDelete) {
+      return { success: false, error: 'Usuario no encontrado' };
+    }
+
+    // Prevent deleting admin users
+    if (userToDelete.role === 'admin') {
+      return { success: false, error: 'No se pueden eliminar usuarios administradores' };
+    }
+
+    // Remove user from users array
+    const updatedUsers = users.filter(u => u.id !== userId);
+    authService.saveUsers(updatedUsers);
+
+    // Remove user's savings entries
+    const savingsEntries = JSON.parse(localStorage.getItem('savings-fund-entries') || '[]');
+    const updatedEntries = savingsEntries.filter((entry: any) => entry.userId !== userId);
+    localStorage.setItem('savings-fund-entries', JSON.stringify(updatedEntries));
+
+    return { success: true };
+  },
   // Logout user
   logout: () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);

@@ -88,6 +88,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
     loadUsers();
   };
 
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al usuario "${userName}"? Esta acción no se puede deshacer y eliminará todos sus ahorros.`)) {
+      const result = authService.deleteUser(userId);
+      
+      if (result.success) {
+        loadUsers();
+      } else {
+        alert(result.error || 'Error al eliminar el usuario');
+      }
+    }
+  };
   const handleAddSavings = (userId: string) => {
     const amount = parseFloat(savingsAmount);
     if (amount > 0) {
@@ -280,6 +291,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ darkMode }) => {
                     className={`${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} transition-colors`}
                   >
                     {user.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.name)}
+                    className="text-red-600 hover:text-red-900 transition-colors"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
