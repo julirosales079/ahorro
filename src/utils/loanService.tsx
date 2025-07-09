@@ -28,10 +28,12 @@ export const loanService = {
     }
 
     // Calculate using simple interest formula
-    // Interest = Principal × Rate × Time (in years)
+    // Total Interest = Principal × Rate × Time (in years)
+    // Monthly payment = (Principal + Total Interest) / Number of months
     const annualInterestRate = interestRate / 100;
     const totalInterest = amount * annualInterestRate * (termMonths / 12);
     const totalPayment = amount + totalInterest;
+    // This ensures the monthly payment includes both principal and interest distributed monthly
     const monthlyPayment = totalPayment / termMonths;
 
     const loans = loanService.getAllLoans();

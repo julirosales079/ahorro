@@ -36,10 +36,11 @@ export const LoanAnalysis: React.FC<LoanAnalysisProps> = ({ darkMode }) => {
     const annualInterestRate = parseFloat(interestRate) / 100;
     const months = parseInt(termMonths);
     
-    // Calculate using simple interest formula
-    // Interest = Principal × Rate × Time (in years)
+    // Calculate using simple interest formula with monthly interest distribution
+    // Total Interest = Principal × Rate × Time (in years)
     const totalInterest = maxLoanAmount * annualInterestRate * (months / 12);
     const totalPayment = maxLoanAmount + totalInterest;
+    // Monthly payment includes principal + proportional interest
     const monthlyPayment = totalPayment / months;
     
     return {
