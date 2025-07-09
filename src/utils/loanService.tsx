@@ -27,11 +27,12 @@ export const loanService = {
       return { success: false, error: 'Solo los administradores pueden crear préstamos' };
     }
 
-    // Calculate monthly payment using loan formula
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const monthlyPayment = amount * 
-      (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, termMonths)) / 
-      (Math.pow(1 + monthlyInterestRate, termMonths) - 1);
+    // Calculate using simple interest formula
+    // Interest = Principal × Rate × Time (in years)
+    const annualInterestRate = interestRate / 100;
+    const totalInterest = amount * annualInterestRate * (termMonths / 12);
+    const totalPayment = amount + totalInterest;
+    const monthlyPayment = totalPayment / termMonths;
 
     const loans = loanService.getAllLoans();
     const newLoan: Loan = {
@@ -40,7 +41,7 @@ export const loanService = {
       amount,
       interestRate,
       termMonths,
-      monthlyPayment: isNaN(monthlyPayment) ? 0 : monthlyPayment,
+      monthlyPayment,
       remainingBalance: amount,
       startDate: new Date().toISOString().split('T')[0],
       status: 'active',
