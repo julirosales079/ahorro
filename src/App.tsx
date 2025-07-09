@@ -7,17 +7,19 @@ import { Settings as SettingsComponent } from './components/Settings';
 import { AuthForm } from './components/AuthForm';
 import { LoanAnalysis } from './components/LoanAnalysis';
 import { LoanManagement } from './components/LoanManagement';
-import { UserDashboard } from './components/UserDashboard';
+import { UserDashboardPage } from './components/UserDashboardPage';
+import { UserDetailDashboard } from './components/UserDetailDashboard';
 import { Settings as SettingsType, User } from './types';
 import { authService } from './utils/auth';
 
-type Tab = 'dashboard' | 'users' | 'user-dashboard' | 'reports' | 'loans' | 'loan-management' | 'settings';
+type Tab = 'dashboard' | 'users' | 'user-dashboard' | 'user-detail' | 'reports' | 'loans' | 'loan-management' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
   const [settings, setSettings] = useState<SettingsType>({
     currency: 'USD',
@@ -51,12 +53,23 @@ function App() {
   const handleLogout = () => {
     authService.logout();
     setUser(null);
+    setSelectedUserId(null);
     setSettings({
       currency: 'USD',
       darkMode: false,
       notifications: true,
       language: 'es'
     });
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    setActiveTab('user-detail');
+  };
+
+  const handleBackToUserDashboard = () => {
+    setSelectedUserId(null);
+    setActiveTab('user-dashboard');
   };
 
   // Apply dark mode
@@ -92,7 +105,9 @@ function App() {
       case 'users':
         return user?.role === 'admin' ? <UserManagement darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'user-dashboard':
-        return user?.role === 'admin' ? <UserDashboard darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
+        return user?.role === 'admin' ? <UserDashboardPage darkMode={settings.darkMode} onUserSelect={handleUserSelect} /> : <FundDashboard darkMode={settings.darkMode} />;
+      case 'user-detail':
+        return user?.role === 'admin' && selectedUserId ? <UserDetailDashboard userId={selectedUserId} darkMode={settings.darkMode} onBack={handleBackToUserDashboard} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'loans':
         return user?.role === 'admin' ? <LoanAnalysis darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'loan-management':
