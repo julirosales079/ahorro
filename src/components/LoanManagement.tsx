@@ -262,18 +262,24 @@ export const LoanManagement: React.FC<LoanManagementProps> = ({ darkMode }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Monto Original
+                      Capital por Cuota
                     </p>
-                    <p className={`font-semibold text-blue-600`}>
-                      {formatCurrency(loan.amount)}
+                    <p className={`font-semibold text-green-600`}>
+                      {formatCurrency(loan.amount / loan.termMonths)}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {formatCurrency(loan.amount)} ÷ {loan.termMonths}
                     </p>
                   </div>
                   <div>
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Saldo Pendiente
+                      Interés por Cuota
                     </p>
-                    <p className={`font-semibold ${loan.remainingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {formatCurrency(loan.remainingBalance)}
+                    <p className={`font-semibold text-orange-600`}>
+                      {formatCurrency(loan.amount * (loan.interestRate / 100))}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {formatCurrency(loan.amount)} × {loan.interestRate}%
                     </p>
                   </div>
                   <div>
@@ -282,6 +288,9 @@ export const LoanManagement: React.FC<LoanManagementProps> = ({ darkMode }) => {
                     </p>
                     <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {formatCurrency(loan.monthlyPayment)}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Capital + Interés
                     </p>
                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       Capital + Interés
