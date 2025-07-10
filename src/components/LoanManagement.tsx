@@ -283,30 +283,54 @@ export const LoanManagement: React.FC<LoanManagementProps> = ({ darkMode }) => {
                     <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {formatCurrency(loan.monthlyPayment)}
                     </p>
-                  </div>
-                  <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Tasa de Interés
-                    </p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {loan.interestRate}%
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Capital + Interés
                     </p>
                   </div>
                   <div>
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Plazo
+                      Interés por Cuota
                     </p>
                     <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {loan.termMonths} meses
+                      {formatCurrency(loan.amount * (loan.interestRate / 100))}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Tasa: {loan.interestRate}%
                     </p>
                   </div>
                   <div>
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Fecha de Inicio
+                      Capital por Cuota
                     </p>
                     <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {new Date(loan.startDate).toLocaleDateString()}
+                      {formatCurrency(loan.amount / loan.termMonths)}
                     </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Monto ÷ {loan.termMonths}
+                    </p>
+                  </div>
+                  <div>
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Total a Pagar
+                    </p>
+                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {formatCurrency(loan.monthlyPayment * loan.termMonths)}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {loan.termMonths} cuotas de {formatCurrency(loan.monthlyPayment)}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} mb-4`}>
+                  <h4 className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                    🔧 Cálculo Aplicado:
+                  </h4>
+                  <div className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'} space-y-1`}>
+                    <p>• Interés por cuota = {formatCurrency(loan.amount)} × {loan.interestRate}% = {formatCurrency(loan.amount * (loan.interestRate / 100))}</p>
+                    <p>• Capital por cuota = {formatCurrency(loan.amount)} ÷ {loan.termMonths} = {formatCurrency(loan.amount / loan.termMonths)}</p>
+                    <p>• Cuota Mensual = {formatCurrency(loan.amount / loan.termMonths)} + {formatCurrency(loan.amount * (loan.interestRate / 100))} = {formatCurrency(loan.monthlyPayment)}</p>
+                    <p>• Total a Pagar = {formatCurrency(loan.monthlyPayment)} × {loan.termMonths} = {formatCurrency(loan.monthlyPayment * loan.termMonths)}</p>
                   </div>
                 </div>
                 
@@ -356,6 +380,14 @@ export const LoanManagement: React.FC<LoanManagementProps> = ({ darkMode }) => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Saldo Actual:</p>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Pagado: {formatCurrency(showPaymentModal.loan.amount - showPaymentModal.loan.remainingBalance)}
+                      </span>
+                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Inicio: {new Date(showPaymentModal.loan.startDate).toLocaleDateString()}
+                      </span>
+                    </div>
                     <p className={`font-semibold text-red-600`}>
                       {formatCurrency(showPaymentModal.loan.remainingBalance)}
                     </p>
