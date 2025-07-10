@@ -40,15 +40,24 @@ export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOs
     // Monto mensual = Monto máximo del préstamo / Número de meses
     const montoSaldo = montoMaximoPrestamo / meses;
     // Monto mensual restante = Monto máximo del préstamo - Monto saldo
-    const montoMes = montoMaximoPrestamo - montoSaldo;
+    const interestRate_decimal = parseFloat(interestRate) / 100;
     // Tasa de interés mensual = Monto mensual * Tasa
     const tasaInteres = montoMes * tasaInteresDecimal;
-    // Total de interés = Tasa de interés mensual * Número de meses
-    const totalInteres = tasaInteres * meses;
-    // Total a pagar = Monto máximo del préstamo + Total de interés
-    const totalPago = montoMaximoPrestamo + totalInteres;
-    // Cuota mensual = Total a pagar / Número de meses + Tasa de interés mensual
-    const cuotaMensual = (totalPago / meses) + tasaInteres;
+    // 🔧 Nueva Fórmula Implementada:
+    // 1. Cuota de capital fija = Monto del préstamo ÷ Número de meses
+    const principalPayment = maxLoanAmount / months;
+    
+    // 2. Interés por cuota = Monto del préstamo × Tasa de interés
+    const interestPerPayment = maxLoanAmount * interestRate_decimal;
+    
+    // 3. Cuota total mensual = Cuota de capital + Interés por cuota
+    const monthlyPayment = principalPayment + interestPerPayment;
+    
+    // 4. Total a pagar = Cuota mensual × Número de meses
+    const totalPayment = monthlyPayment * months;
+    
+    // 5. Total de intereses = Total a pagar - Monto del préstamo
+    const totalInterest = totalPayment - maxLoanAmount;
 
     return {
       maxLoanAmount: montoMaximoPrestamo,
@@ -57,6 +66,8 @@ export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOs
       totalInterest: totalInteres,
       interestPerPayment: tasaInteres,
       principalPayment: montoSaldo,
+      interestPerPayment,
+      principalPayment,
       interestRate: parseFloat(interestRate),
       termMonths: termMonths,
       loanPercentage: parseFloat(loanPercentage)

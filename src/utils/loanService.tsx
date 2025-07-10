@@ -27,16 +27,21 @@ export const loanService = {
       return { success: false, error: 'Solo los administradores pueden crear préstamos' };
     }
 
-    // 🔧 Fórmula Final Correcta:
-    // Interés por cuota = Monto × Tasa
+    // 🔧 Nueva Fórmula Implementada:
+    // 1. Cuota de capital fija = Monto del préstamo ÷ Número de meses
+    const principalPayment = amount / termMonths;
+    
+    // 2. Interés por cuota = Monto del préstamo × Tasa de interés (en decimal)
     const interestRate_decimal = interestRate / 100;
     const interestPerPayment = amount * interestRate_decimal;
-    // Cuota Mensual = (Monto ÷ Número de Meses) + Interés
-    const principalPayment = amount / termMonths;
+    
+    // 3. Cuota total mensual = Cuota de capital + Interés por cuota
     const monthlyPayment = principalPayment + interestPerPayment;
-    // Total a Pagar = Cuota Mensual × Número de Meses
+    
+    // 4. Total a pagar = Cuota mensual × Número de meses
     const totalPayment = monthlyPayment * termMonths;
-    // Interés Total = Total a Pagar - Monto
+    
+    // 5. Total de intereses = Total a pagar - Monto del préstamo
     const totalInterest = totalPayment - amount;
 
     const loans = loanService.getAllLoans();
