@@ -33,43 +33,34 @@ export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOs
   const calcularAnalisisPrestamo = (usuario: Usuario) => {
     const ahorros = usuario.totalAhorros;
     const montoMaximoPrestamo = (ahorros * parseFloat(loanPercentage)) / 100;
-    const tasaInteresDecimal = parseFloat(interestRate) / 100;
     const meses = parseInt(termMonths);
 
-    // 🔧 Fórmula Final Correcta
-    // Monto mensual = Monto máximo del préstamo / Número de meses
-    const montoSaldo = montoMaximoPrestamo / meses;
-    // Monto mensual restante = Monto máximo del préstamo - Monto saldo
-    const interestRate_decimal = parseFloat(interestRate) / 100;
-    // Tasa de interés mensual = Monto mensual * Tasa
-    const tasaInteres = montoMes * tasaInteresDecimal;
     // 🔧 Nueva Fórmula Implementada:
     // 1. Cuota de capital fija = Monto del préstamo ÷ Número de meses
-    const principalPayment = maxLoanAmount / months;
+    const principalPayment = montoMaximoPrestamo / meses;
     
     // 2. Interés por cuota = Monto del préstamo × Tasa de interés
-    const interestPerPayment = maxLoanAmount * interestRate_decimal;
+    const interestRate_decimal = parseFloat(interestRate) / 100;
+    const interestPerPayment = montoMaximoPrestamo * interestRate_decimal;
     
     // 3. Cuota total mensual = Cuota de capital + Interés por cuota
-    const monthlyPayment = principalPayment + interestPerPayment;
+    const cuotaMensual = principalPayment + interestPerPayment;
     
     // 4. Total a pagar = Cuota mensual × Número de meses
-    const totalPayment = monthlyPayment * months;
+    const totalPago = cuotaMensual * meses;
     
     // 5. Total de intereses = Total a pagar - Monto del préstamo
-    const totalInterest = totalPayment - maxLoanAmount;
+    const totalInteres = totalPago - montoMaximoPrestamo;
 
     return {
       maxLoanAmount: montoMaximoPrestamo,
       monthlyPayment: cuotaMensual,
       totalPayment: totalPago,
       totalInterest: totalInteres,
-      interestPerPayment: tasaInteres,
-      principalPayment: montoSaldo,
       interestPerPayment,
       principalPayment,
       interestRate: parseFloat(interestRate),
-      termMonths: termMonths,
+      termMonths: meses,
       loanPercentage: parseFloat(loanPercentage)
     };
   };
@@ -537,7 +528,6 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                       </p>
                       <p className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                         Ganancia de {formatearMoneda(analysisResults.totalInterest)} en {termMonths} meses
-                        Ganancia de {formatCurrency(analysisResults.totalInterest)} en {termMonths} meses
                       </p>
                     </div>
                     <div className={`p-2 rounded ${modoOscuro ? 'bg-gray-700' : 'bg-white'}`}>
