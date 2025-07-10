@@ -5,7 +5,7 @@ import { UserManagement } from './components/UserManagement';
 import { Reports } from './components/Reports';
 import { Settings as SettingsComponent } from './components/Settings';
 import { AuthForm } from './components/AuthForm';
-import { AnalisisPrestamo } from './components/LoanAnalysis';
+import { LoanAnalysis } from './components/LoanAnalysis';
 import { LoanManagement } from './components/LoanManagement';
 import { UserDashboardPage } from './components/UserDashboardPage';
 import { UserDetailDashboard } from './components/UserDetailDashboard';
@@ -109,7 +109,7 @@ function App() {
       case 'user-detail':
         return user?.role === 'admin' && selectedUserId ? <UserDetailDashboard userId={selectedUserId} darkMode={settings.darkMode} onBack={handleBackToUserDashboard} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'loans':
-        return user?.role === 'admin' ? <AnalisisPrestamo modoOscuro={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
+        return user?.role === 'admin' ? <LoanAnalysis darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'loan-management':
         return user?.role === 'admin' ? <LoanManagement darkMode={settings.darkMode} /> : <FundDashboard darkMode={settings.darkMode} />;
       case 'reports':
