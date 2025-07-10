@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calculator as Calculadora, DollarSign as SignoDolar, LucideCurrency as TendenciaArriba, SquareUser as Usuarios, Archive as TextoArchivo, Map as Mas, AArrowDown as Ojo, AlertTriangle as TrianguloAlerta, CheckCircle as CirculoCheck } from 'lucide-react';
 import { Usuario, AnalisisPrestamo as TipoAnalisisPrestamo } from '../types';
 import { servicioAutenticacion } from '../utils/auth';
-import { servicioAhorros } from '../utils/savingsService';
+import { savingsService as servicioAhorros } from '../utils/savingsService';
 import { servicioPrestamo } from '../utils/loanService';
 import { formatCurrency } from '../utils/calculations';
 
