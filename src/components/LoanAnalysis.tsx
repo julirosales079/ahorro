@@ -3,7 +3,7 @@ import { Calculator as Calculadora, DollarSign as SignoDolar, LucideCurrency as 
 import { Usuario, AnalisisPrestamo as TipoAnalisisPrestamo } from '../types';
 import { authService as servicioAutenticacion } from '../utils/auth';
 import { savingsService as servicioAhorros } from '../utils/savingsService';
-import { servicioPrestamo } from '../utils/loanService';
+import { loanService as servicioPrestamo } from '../utils/loanService';
 import { formatCurrency } from '../utils/calculations';
 
 interface PropiedadesAnalisisPrestamo {
