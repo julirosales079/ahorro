@@ -27,14 +27,17 @@ export const loanService = {
       return { success: false, error: 'Solo los administradores pueden crear préstamos' };
     }
 
-    // Calculate using simple interest formula
-    // Total Interest = Principal × Rate × Time (in years)
-    // Monthly payment = (Principal + Total Interest) / Number of months
-    const annualInterestRate = interestRate / 100;
-    const totalInterest = amount * annualInterestRate * (termMonths / 12);
-    const totalPayment = amount + totalInterest;
-    // This ensures the monthly payment includes both principal and interest distributed monthly
-    const monthlyPayment = totalPayment / termMonths;
+    // 🔧 Fórmula Final Correcta:
+    // Interés por cuota = Monto × Tasa
+    const interestRate_decimal = interestRate / 100;
+    const interestPerPayment = amount * interestRate_decimal;
+    // Cuota Mensual = (Monto ÷ Número de Meses) + Interés
+    const principalPayment = amount / termMonths;
+    const monthlyPayment = principalPayment + interestPerPayment;
+    // Total a Pagar = Cuota Mensual × Número de Meses
+    const totalPayment = monthlyPayment * termMonths;
+    // Interés Total = Total a Pagar - Monto
+    const totalInterest = totalPayment - amount;
 
     const loans = loanService.getAllLoans();
     const newLoan: Loan = {
