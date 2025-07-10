@@ -26,7 +26,7 @@ export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOs
   }, []);
 
   const cargarUsuarios = () => {
-    const allUsers = servicioAutenticacion.obtenerTodosUsuariosPublico().filter(u => u.role === 'miembro' && u.isActive);
+    const allUsers = servicioAutenticacion.getAllUsersPublic().filter(u => u.role === 'miembro' && u.isActive);
     establecerUsuarios(allUsers);
   };
 
