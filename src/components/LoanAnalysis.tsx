@@ -4,7 +4,7 @@ import { Usuario, AnalisisPrestamo as TipoAnalisisPrestamo } from '../types';
 import { servicioAutenticacion } from '../utils/auth';
 import { servicioAhorros } from '../utils/savingsService';
 import { servicioPrestamo } from '../utils/loanService';
-import { formatearMoneda } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 
 interface PropiedadesAnalisisPrestamo {
   modoOscuro: boolean;
@@ -102,22 +102,22 @@ export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOs
         establecerMensajeExito(`✅ Préstamo creado exitosamente para ${selectedUser.name}. 
         
 📋 Detalles del préstamo:
-💰 Monto: ${formatearMoneda(analysisResults.maxLoanAmount)}
+💰 Monto: ${formatCurrency(analysisResults.maxLoanAmount)}
 📊 Tasa de interés: ${analysisResults.interestRate}%
-💵 Interés por cuota: ${formatearMoneda(analysisResults.interestPerPayment)}
-💳 Capital por cuota: ${formatearMoneda(analysisResults.principalPayment)}
-💰 Cuota mensual: ${formatearMoneda(analysisResults.monthlyPayment)}
-📈 Interés total: ${formatearMoneda(analysisResults.totalInterest)}
-💳 Total a pagar: ${formatearMoneda(analysisResults.totalPayment)}
+💵 Interés por cuota: ${formatCurrency(analysisResults.interestPerPayment)}
+💳 Capital por cuota: ${formatCurrency(analysisResults.principalPayment)}
+💰 Cuota mensual: ${formatCurrency(analysisResults.monthlyPayment)}
+📈 Interés total: ${formatCurrency(analysisResults.totalInterest)}
+💳 Total a pagar: ${formatCurrency(analysisResults.totalPayment)}
 📅 Plazo: ${analysisResults.termMonths} meses
 
 🔧 Fórmula aplicada:
-• Monto mensual = ${formatearMoneda(analysisResults.maxLoanAmount)} ÷ ${analysisResults.termMonths} = ${formatearMoneda(analysisResults.principalPayment)}
-• Monto mensual restante = ${formatearMoneda(analysisResults.maxLoanAmount)} - ${formatearMoneda(analysisResults.principalPayment)} = ${formatearMoneda(montoMes)}
-• Tasa de interés mensual = ${formatearMoneda(montoMes)} × ${analysisResults.interestRate}% = ${formatearMoneda(analysisResults.interestPerPayment)}
-• Total de interés = ${formatearMoneda(analysisResults.interestPerPayment)} × ${analysisResults.termMonths} = ${formatearMoneda(analysisResults.totalInterest)}
-• Total a pagar = ${formatearMoneda(analysisResults.maxLoanAmount)} + ${formatearMoneda(analysisResults.totalInterest)} = ${formatearMoneda(analysisResults.totalPayment)}
-• Cuota mensual = (${formatearMoneda(analysisResults.totalPayment)} ÷ ${analysisResults.termMonths}) + ${formatearMoneda(analysisResults.interestPerPayment)} = ${formatearMoneda(analysisResults.monthlyPayment)}
+• Monto mensual = ${formatCurrency(analysisResults.maxLoanAmount)} ÷ ${analysisResults.termMonths} = ${formatCurrency(analysisResults.principalPayment)}
+• Monto mensual restante = ${formatCurrency(analysisResults.maxLoanAmount)} - ${formatCurrency(analysisResults.principalPayment)} = ${formatCurrency(montoMes)}
+• Tasa de interés mensual = ${formatCurrency(montoMes)} × ${analysisResults.interestRate}% = ${formatCurrency(analysisResults.interestPerPayment)}
+• Total de interés = ${formatCurrency(analysisResults.interestPerPayment)} × ${analysisResults.termMonths} = ${formatCurrency(analysisResults.totalInterest)}
+• Total a pagar = ${formatCurrency(analysisResults.maxLoanAmount)} + ${formatCurrency(analysisResults.totalInterest)} = ${formatCurrency(analysisResults.totalPayment)}
+• Cuota mensual = (${formatCurrency(analysisResults.totalPayment)} ÷ ${analysisResults.termMonths}) + ${formatCurrency(analysisResults.interestPerPayment)} = ${formatCurrency(analysisResults.monthlyPayment)}
 
 El préstamo está disponible en la sección "Gestión de Préstamos" donde podrás registrar los pagos.`);
         
@@ -288,7 +288,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                       Total Ahorrado
                     </p>
                     <p className={`font-semibold text-green-600`}>
-                      {formatearMoneda(usuario.totalSavings)}
+                      {formatCurrency(usuario.totalSavings)}
                     </p>
                   </div>
                   <div>
@@ -309,13 +309,13 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>Préstamo máximo:</span>
                       <span className={`font-medium text-blue-600`}>
-                        {formatearMoneda(quickAnalysis.maxLoanAmount)}
+                        {formatCurrency(quickAnalysis.maxLoanAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>Cuota mensual:</span>
                       <span className={`font-medium ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
-                        {formatearMoneda(quickAnalysis.monthlyPayment)}
+                        {formatCurrency(quickAnalysis.monthlyPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -385,7 +385,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado</p>
-                    <p className="font-semibold text-green-600">{formatearMoneda(selectedUser.totalSavings)}</p>
+                    <p className="font-semibold text-green-600">{formatCurrency(selectedUser.totalSavings)}</p>
                   </div>
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Depósitos</p>
@@ -489,25 +489,25 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Monto máximo del préstamo:</span>
                       <span className={`font-bold text-blue-600`}>
-                        {formatearMoneda(analysisResults.maxLoanAmount)}
+                        {formatCurrency(analysisResults.maxLoanAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Cuota mensual:</span>
                       <span className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
-                        {formatearMoneda(analysisResults.monthlyPayment)}
+                        {formatCurrency(analysisResults.monthlyPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total a pagar:</span>
                       <span className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
-                        {formatearMoneda(analysisResults.totalPayment)}
+                        {formatCurrency(analysisResults.totalPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total de intereses:</span>
                       <span className="font-semibold text-green-600">
-                        {formatearMoneda(analysisResults.totalInterest)}
+                        {formatCurrency(analysisResults.totalInterest)}
                       </span>
                     </div>
                   </div>
@@ -537,6 +537,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                       </p>
                       <p className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                         Ganancia de {formatearMoneda(analysisResults.totalInterest)} en {termMonths} meses
+                        Ganancia de {formatCurrency(analysisResults.totalInterest)} en {termMonths} meses
                       </p>
                     </div>
                     <div className={`p-2 rounded ${modoOscuro ? 'bg-gray-700' : 'bg-white'}`}>
@@ -620,7 +621,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado:</p>
                     <p className="font-semibold text-green-600">
-                      {formatearMoneda(selectedUser.totalSavings)}
+                      {formatCurrency(selectedUser.totalSavings)}
                     </p>
                   </div>
                   <div>
@@ -641,7 +642,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Monto del Préstamo:</p>
                     <p className="font-bold text-green-600 text-lg">
-                      {formatearMoneda(analysisResults.maxLoanAmount)}
+                      {formatCurrency(analysisResults.maxLoanAmount)}
                     </p>
                   </div>
                   <div>
@@ -659,19 +660,19 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Cuota Mensual:</p>
                     <p className="font-bold text-blue-600 text-lg">
-                      {formatearMoneda(analysisResults.monthlyPayment)}
+                      {formatCurrency(analysisResults.monthlyPayment)}
                     </p>
                   </div>
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total a Pagar:</p>
                     <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
-                      {formatearMoneda(analysisResults.totalPayment)}
+                      {formatCurrency(analysisResults.totalPayment)}
                     </p>
                   </div>
                   <div>
                     <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total de Intereses:</p>
                     <p className="font-semibold text-orange-600">
-                      {formatearMoneda(analysisResults.totalInterest)}
+                      {formatCurrency(analysisResults.totalInterest)}
                     </p>
                   </div>
                 </div>
