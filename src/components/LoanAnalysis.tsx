@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculadora, SignoDolar, TendenciaArriba, Usuarios, TextoArchivo, Mas, Ojo, TrianguloAlerta, CirculoCheck } from 'lucide-react';
+import { Calculator as Calculadora, DollarSign as SignoDolar, LucideCurrency as TendenciaArriba, SquareUser as Usuarios, Archive as TextoArchivo, Map as Mas, AArrowDown as Ojo, AlertTriangle as TrianguloAlerta, CheckCircle as CirculoCheck } from 'lucide-react';
 import { Usuario, AnalisisPrestamo as TipoAnalisisPrestamo } from '../types';
 import { servicioAutenticacion } from '../utils/auth';
 import { servicioAhorros } from '../utils/savingsService';
