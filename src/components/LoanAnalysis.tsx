@@ -1,98 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, TrendingUp, Users, FileText, Plus, Eye, AlertTriangle, CheckCircle } from 'lucide-react';
-import { User, LoanAnalysis as LoanAnalysisType } from '../types';
-import { authService } from '../utils/auth';
-import { savingsService } from '../utils/savingsService';
-import { loanService } from '../utils/loanService';
-import { formatCurrency } from '../utils/calculations';
+import { Calculadora, SignoDolar, TendenciaArriba, Usuarios, TextoArchivo, Mas, Ojo, TrianguloAlerta, CirculoCheck } from 'lucide-react';
+import { Usuario, AnalisisPrestamo as TipoAnalisisPrestamo } from '../types';
+import { servicioAutenticacion } from '../utils/auth';
+import { servicioAhorros } from '../utils/savingsService';
+import { servicioPrestamo } from '../utils/loanService';
+import { formatearMoneda } from '../utils/calculations';
 
-interface LoanAnalysisProps {
-  darkMode: boolean;
+interface PropiedadesAnalisisPrestamo {
+  modoOscuro: boolean;
 }
 
-export const LoanAnalysis: React.FC<LoanAnalysisProps> = ({ darkMode }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showAnalysisForm, setShowAnalysisForm] = useState(false);
-  const [interestRate, setInterestRate] = useState('15');
-  const [termMonths, setTermMonths] = useState('12');
-  const [loanPercentage, setLoanPercentage] = useState('80');
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+export const AnalisisPrestamo: React.FC<PropiedadesAnalisisPrestamo> = ({ modoOscuro }) => {
+  const [users, establecerUsuarios] = useState<Usuario[]>([]);
+  const [selectedUser, establecerUsuarioSeleccionado] = useState<Usuario | null>(null);
+  const [showAnalysisForm, establecerMostrarFormularioAnalisis] = useState(false);
+  const [interestRate, establecerTasaInteres] = useState('');
+  const [termMonths, establecerPlazoMeses] = useState('12');
+  const [loanPercentage, establecerPorcentajePrestamo] = useState('80');
+  const [analysisResults, establecerResultadosAnalisis] = useState<any>(null);
+  const [showConfirmationModal, establecerMostrarModalConfirmacion] = useState(false);
+  const [successMessage, establecerMensajeExito] = useState('');
 
   useEffect(() => {
-    loadUsers();
+    cargarUsuarios();
   }, []);
 
-  const loadUsers = () => {
-    const allUsers = authService.getAllUsersPublic().filter(u => u.role === 'member' && u.isActive);
-    setUsers(allUsers);
+  const cargarUsuarios = () => {
+    const allUsers = servicioAutenticacion.obtenerTodosUsuariosPublico().filter(u => u.role === 'miembro' && u.isActive);
+    establecerUsuarios(allUsers);
   };
 
-  const calculateLoanAnalysis = (user: User) => {
-    const savings = user.totalSavings;
-    const maxLoanAmount = (savings * parseFloat(loanPercentage)) / 100;
-    const annualInterestRate = parseFloat(interestRate) / 100;
-    const months = parseInt(termMonths);
-    
-    // Calculate using simple interest formula with monthly interest distribution
-    // Total Interest = Principal × Rate × Time (in years)
-    const totalInterest = maxLoanAmount * annualInterestRate * (months / 12);
-    const totalPayment = maxLoanAmount + totalInterest;
-    // Monthly payment includes principal + proportional interest
-    const monthlyPayment = totalPayment / months;
-    
+  const calcularAnalisisPrestamo = (usuario: Usuario) => {
+    const ahorros = usuario.totalAhorros;
+    const montoMaximoPrestamo = (ahorros * parseFloat(loanPercentage)) / 100;
+    const tasaInteresDecimal = parseFloat(interestRate) / 100;
+    const meses = parseInt(termMonths);
+
+    // 🔧 Fórmula Final Correcta
+    // Monto mensual = Monto máximo del préstamo / Número de meses
+    const montoSaldo = montoMaximoPrestamo / meses;
+    // Monto mensual restante = Monto máximo del préstamo - Monto saldo
+    const montoMes = montoMaximoPrestamo - montoSaldo;
+    // Tasa de interés mensual = Monto mensual * Tasa
+    const tasaInteres = montoMes * tasaInteresDecimal;
+    // Total de interés = Tasa de interés mensual * Número de meses
+    const totalInteres = tasaInteres * meses;
+    // Total a pagar = Monto máximo del préstamo + Total de interés
+    const totalPago = montoMaximoPrestamo + totalInteres;
+    // Cuota mensual = Total a pagar / Número de meses + Tasa de interés mensual
+    const cuotaMensual = (totalPago / meses) + tasaInteres;
+
     return {
-      maxLoanAmount,
-      monthlyPayment,
-      totalPayment,
-      totalInterest,
+      maxLoanAmount: montoMaximoPrestamo,
+      monthlyPayment: cuotaMensual,
+      totalPayment: totalPago,
+      totalInterest: totalInteres,
+      interestPerPayment: tasaInteres,
+      principalPayment: montoSaldo,
       interestRate: parseFloat(interestRate),
-      termMonths: months,
+      termMonths: termMonths,
       loanPercentage: parseFloat(loanPercentage)
     };
   };
 
-  const handleAnalyzeUser = (user: User) => {
-    setSelectedUser(user);
-    const analysis = calculateLoanAnalysis(user);
-    setAnalysisResults(analysis);
-    setShowAnalysisForm(true);
+  const manejarAnalizarUsuario = (usuario: Usuario) => {
+    establecerUsuarioSeleccionado(usuario);
+    const analisis = calcularAnalisisPrestamo(usuario);
+    establecerResultadosAnalisis(analisis);
+    establecerMostrarFormularioAnalisis(true);
   };
 
-  const handleCreateLoan = async () => {
+  const manejarCrearPrestamo = async () => {
     if (!selectedUser || !analysisResults) return;
 
     try {
-      const result = loanService.createLoan(
+      const resultado = servicioPrestamo.crearPrestamo(
         selectedUser.id,
         analysisResults.maxLoanAmount,
         analysisResults.interestRate,
         analysisResults.termMonths
       );
 
-      if (result.success) {
-        setShowConfirmationModal(false);
-        setShowAnalysisForm(false);
-        setSelectedUser(null);
-        setAnalysisResults(null);
+      if (resultado.success) {
+        establecerMostrarModalConfirmacion(false);
+        establecerMostrarFormularioAnalisis(false);
+        establecerUsuarioSeleccionado(null);
+        establecerResultadosAnalisis(null);
         
-        // Show success message in the app
-        setSuccessMessage(`✅ Préstamo creado exitosamente para ${selectedUser.name}. 
+        // Mostrar mensaje de éxito en la aplicación
+        establecerMensajeExito(`✅ Préstamo creado exitosamente para ${selectedUser.name}. 
         
 📋 Detalles del préstamo:
-💰 Monto: ${formatCurrency(analysisResults.maxLoanAmount)}
+💰 Monto: ${formatearMoneda(analysisResults.maxLoanAmount)}
 📊 Tasa de interés: ${analysisResults.interestRate}%
+💵 Interés por cuota: ${formatearMoneda(analysisResults.interestPerPayment)}
+💳 Capital por cuota: ${formatearMoneda(analysisResults.principalPayment)}
+💰 Cuota mensual: ${formatearMoneda(analysisResults.monthlyPayment)}
+📈 Interés total: ${formatearMoneda(analysisResults.totalInterest)}
+💳 Total a pagar: ${formatearMoneda(analysisResults.totalPayment)}
 📅 Plazo: ${analysisResults.termMonths} meses
-💳 Cuota mensual: ${formatCurrency(analysisResults.monthlyPayment)}
+
+🔧 Fórmula aplicada:
+• Monto mensual = ${formatearMoneda(analysisResults.maxLoanAmount)} ÷ ${analysisResults.termMonths} = ${formatearMoneda(analysisResults.principalPayment)}
+• Monto mensual restante = ${formatearMoneda(analysisResults.maxLoanAmount)} - ${formatearMoneda(analysisResults.principalPayment)} = ${formatearMoneda(montoMes)}
+• Tasa de interés mensual = ${formatearMoneda(montoMes)} × ${analysisResults.interestRate}% = ${formatearMoneda(analysisResults.interestPerPayment)}
+• Total de interés = ${formatearMoneda(analysisResults.interestPerPayment)} × ${analysisResults.termMonths} = ${formatearMoneda(analysisResults.totalInterest)}
+• Total a pagar = ${formatearMoneda(analysisResults.maxLoanAmount)} + ${formatearMoneda(analysisResults.totalInterest)} = ${formatearMoneda(analysisResults.totalPayment)}
+• Cuota mensual = (${formatearMoneda(analysisResults.totalPayment)} ÷ ${analysisResults.termMonths}) + ${formatearMoneda(analysisResults.interestPerPayment)} = ${formatearMoneda(analysisResults.monthlyPayment)}
 
 El préstamo está disponible en la sección "Gestión de Préstamos" donde podrás registrar los pagos.`);
         
-        // Clear message after 10 seconds
-        setTimeout(() => setSuccessMessage(''), 10000);
+        // Borrar mensaje después de 10 segundos
+        setTimeout(() => establecerMensajeExito(''), 10000);
       } else {
-        alert('Error al crear el préstamo: ' + result.error);
+        alert('Error al crear el préstamo: ' + resultado.error);
       }
     } catch (error) {
       console.error('Error creating loan:', error);
@@ -100,36 +121,36 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
     }
   };
 
-  const getRiskLevel = (savings: number) => {
-    if (savings >= 1000000) return { level: 'Bajo', color: 'text-green-600', bg: 'bg-green-100' };
-    if (savings >= 500000) return { level: 'Medio', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-    if (savings >= 100000) return { level: 'Alto', color: 'text-orange-600', bg: 'bg-orange-100' };
+  const obtenerNivelRiesgo = (ahorros: number) => {
+    if (ahorros >= 1000000) return { level: 'Bajo', color: 'text-green-600', bg: 'bg-green-100' };
+    if (ahorros >= 500000) return { level: 'Medio', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if (ahorros >= 100000) return { level: 'Alto', color: 'text-orange-600', bg: 'bg-orange-100' };
     return { level: 'Muy Alto', color: 'text-red-600', bg: 'bg-red-100' };
   };
 
-  const getRecommendedLoanPercentage = (savings: number) => {
-    if (savings >= 1000000) return 90;
-    if (savings >= 500000) return 80;
-    if (savings >= 100000) return 70;
+  const obtenerPorcentajePrestamoRecomendado = (ahorros: number) => {
+    if (ahorros >= 1000000) return 90;
+    if (ahorros >= 500000) return 80;
+    if (ahorros >= 100000) return 70;
     return 50;
   };
 
   return (
     <div className="space-y-6">
-      {/* Success Message */}
+      {/* Mensaje de Éxito */}
       {successMessage && (
-        <div className={`p-6 rounded-lg ${darkMode ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'} border ${darkMode ? 'border-green-800' : 'border-green-200'}`}>
+        <div className={`p-6 rounded-lg ${modoOscuro ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'} border ${modoOscuro ? 'border-green-800' : 'border-green-200'}`}>
           <div className="flex items-start space-x-3">
-            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+            <CirculoCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
             <div>
               <h3 className={`font-semibold text-green-600 mb-2`}>
                 Préstamo Creado Exitosamente
               </h3>
-              <div className={`text-sm ${darkMode ? 'text-green-200' : 'text-green-800'} whitespace-pre-line`}>
+              <div className={`text-sm ${modoOscuro ? 'text-green-200' : 'text-green-800'} whitespace-pre-line`}>
                 {successMessage}
               </div>
               <button
-                onClick={() => setSuccessMessage('')}
+                onClick={() => establecerMensajeExito('')}
                 className="mt-3 text-sm text-green-600 hover:text-green-800 underline"
               >
                 Cerrar mensaje
@@ -139,55 +160,55 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
         </div>
       )}
 
-      {/* Header */}
+      {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <h2 className={`text-2xl font-bold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
             Análisis de Préstamos
           </h2>
-          <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
             Analiza la capacidad de préstamo de cada usuario basado en sus ahorros
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Calculator className="h-6 w-6 text-blue-600" />
+          <Calculadora className="h-6 w-6 text-blue-600" />
         </div>
       </div>
 
-      {/* Global Settings */}
-      <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
-        <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+      {/* Configuración Global */}
+      <div className={`p-6 rounded-lg ${modoOscuro ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+        <h3 className={`text-lg font-semibold mb-4 ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
           Configuración Global de Préstamos
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
               Tasa de Interés (%)
             </label>
             <input
               type="number"
               step="0.1"
               value={interestRate}
-              onChange={(e) => setInterestRate(e.target.value)}
+              onChange={(e) => establecerTasaInteres(e.target.value)}
               className={`w-full px-3 py-2 rounded-md border ${
-                darkMode 
+                modoOscuro 
                   ? 'bg-gray-700 border-gray-600 text-white' 
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
-            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className={`text-xs mt-1 ${modoOscuro ? 'text-gray-400' : 'text-gray-500'}`}>
               Tasa de interés total para el préstamo
             </p>
           </div>
           <div>
-            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
               Plazo (Meses)
             </label>
             <select
               value={termMonths}
-              onChange={(e) => setTermMonths(e.target.value)}
+              onChange={(e) => establecerPlazoMeses(e.target.value)}
               className={`w-full px-3 py-2 rounded-md border ${
-                darkMode 
+                modoOscuro 
                   ? 'bg-gray-700 border-gray-600 text-white' 
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -200,7 +221,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
             </select>
           </div>
           <div>
-            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
               % del Ahorro Prestable
             </label>
             <input
@@ -208,9 +229,9 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
               min="10"
               max="100"
               value={loanPercentage}
-              onChange={(e) => setLoanPercentage(e.target.value)}
+              onChange={(e) => establecerPorcentajePrestamo(e.target.value)}
               className={`w-full px-3 py-2 rounded-md border ${
-                darkMode 
+                modoOscuro 
                   ? 'bg-gray-700 border-gray-600 text-white' 
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -219,77 +240,77 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
         </div>
       </div>
 
-      {/* Users Analysis Grid */}
+      {/* Grilla de Análisis de Usuarios */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((user) => {
-          const userSavings = savingsService.getSavingsByUser(user.id);
+        {users.map((usuario) => {
+          const userSavings = servicioAhorros.obtenerAhorrosPorUsuario(usuario.id);
           const lastSaving = userSavings[userSavings.length - 1];
-          const risk = getRiskLevel(user.totalSavings);
-          const recommendedPercentage = getRecommendedLoanPercentage(user.totalSavings);
-          const quickAnalysis = calculateLoanAnalysis(user);
+          const riesgo = obtenerNivelRiesgo(usuario.totalAhorros);
+          const porcentajeRecomendado = obtenerPorcentajePrestamoRecomendado(usuario.totalAhorros);
+          const quickAnalysis = calcularAnalisisPrestamo(usuario);
           
           return (
-            <div key={user.id} className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-l-4 border-blue-500`}>
+            <div key={usuario.id} className={`p-6 rounded-lg ${modoOscuro ? 'bg-gray-800' : 'bg-white'} shadow-sm border-l-4 border-blue-500`}>
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {user.name.charAt(0).toUpperCase()}
+                    {usuario.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {user.name}
+                    <h3 className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                      {usuario.name}
                     </h3>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {user.email}
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {usuario.email}
                     </p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${risk.bg} ${risk.color}`}>
-                  Riesgo {risk.level}
+                <span className={`px-2 py-1 text-xs rounded-full ${riesgo.bg} ${riesgo.color}`}>
+                  Riesgo {riesgo.level}
                 </span>
               </div>
               
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                       Total Ahorrado
                     </p>
                     <p className={`font-semibold text-green-600`}>
-                      {formatCurrency(user.totalSavings)}
+                      {formatearMoneda(usuario.totalSavings)}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                       Depósitos
                     </p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {userSavings.length}
                     </p>
                   </div>
                 </div>
                 
-                <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                <div className={`p-3 rounded-lg ${modoOscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <p className={`text-sm font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                     Análisis Rápido
                   </p>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Préstamo máximo:</span>
+                      <span className={`${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>Préstamo máximo:</span>
                       <span className={`font-medium text-blue-600`}>
-                        {formatCurrency(quickAnalysis.maxLoanAmount)}
+                        {formatearMoneda(quickAnalysis.maxLoanAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cuota mensual:</span>
-                      <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {formatCurrency(quickAnalysis.monthlyPayment)}
+                      <span className={`${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>Cuota mensual:</span>
+                      <span className={`font-medium ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                        {formatearMoneda(quickAnalysis.monthlyPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>% Recomendado:</span>
+                      <span className={`${modoOscuro ? 'text-gray-400' : 'text-gray-600'}`}>% Recomendado:</span>
                       <span className={`font-medium text-orange-600`}>
-                        {recommendedPercentage}%
+                        {porcentajeRecomendado}%
                       </span>
                     </div>
                   </div>
@@ -297,20 +318,20 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                 
                 {lastSaving && (
                   <div className="flex justify-between text-sm">
-                    <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                       Último depósito:
                     </span>
-                    <span className={`${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <span className={`${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {new Date(lastSaving.date).toLocaleDateString()}
                     </span>
                   </div>
                 )}
                 
                 <button
-                  onClick={() => handleAnalyzeUser(user)}
+                  onClick={() => manejarAnalizarUsuario(usuario)}
                   className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  <Eye size={16} />
+                  <Ojo size={16} />
                   <span>Análisis Detallado</span>
                 </button>
               </div>
@@ -319,23 +340,23 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
         })}
       </div>
 
-      {/* Detailed Analysis Modal */}
+      {/* Modal de Análisis Detallado */}
       {showAnalysisForm && selectedUser && analysisResults && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`max-w-4xl w-full rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} max-h-[90vh] overflow-y-auto`}>
-            {/* Header */}
+          <div className={`max-w-4xl w-full rounded-lg shadow-xl ${modoOscuro ? 'bg-gray-800' : 'bg-white'} max-h-[90vh] overflow-y-auto`}>
+            {/* Encabezado */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h3 className={`text-xl font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                     Análisis Detallado de Préstamo
                   </h3>
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                     {selectedUser.name} - {selectedUser.email}
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowAnalysisForm(false)}
+                  onClick={() => establecerMostrarFormularioAnalisis(false)}
                   className={`text-gray-400 hover:text-gray-600 transition-colors`}
                 >
                   ✕
@@ -343,47 +364,47 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
               </div>
             </div>
 
-            {/* Content */}
+            {/* Contenido */}
             <div className="p-6 space-y-6">
-              {/* User Info Summary */}
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h4 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              {/* Resumen de Información del Usuario */}
+              <div className={`p-4 rounded-lg ${modoOscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <h4 className={`font-semibold mb-3 ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                   Información del Usuario
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado</p>
-                    <p className="font-semibold text-green-600">{formatCurrency(selectedUser.totalSavings)}</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado</p>
+                    <p className="font-semibold text-green-600">{formatearMoneda(selectedUser.totalSavings)}</p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Depósitos</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {savingsService.getSavingsByUser(selectedUser.id).length}
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Depósitos</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                      {servicioAhorros.obtenerAhorrosPorUsuario(selectedUser.id).length}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nivel de Riesgo</p>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getRiskLevel(selectedUser.totalSavings).bg} ${getRiskLevel(selectedUser.totalSavings).color}`}>
-                      {getRiskLevel(selectedUser.totalSavings).level}
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Nivel de Riesgo</p>
+                    <span className={`px-2 py-1 text-xs rounded-full ${obtenerNivelRiesgo(selectedUser.totalSavings).bg} ${obtenerNivelRiesgo(selectedUser.totalSavings).color}`}>
+                      {obtenerNivelRiesgo(selectedUser.totalSavings).level}
                     </span>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>% Recomendado</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>% Recomendado</p>
                     <p className="font-semibold text-orange-600">
-                      {getRecommendedLoanPercentage(selectedUser.totalSavings)}%
+                      {obtenerPorcentajePrestamoRecomendado(selectedUser.totalSavings)}%
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Loan Parameters */}
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h4 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              {/* Parámetros del Préstamo */}
+              <div className={`p-4 rounded-lg ${modoOscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <h4 className={`font-semibold mb-3 ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                   Parámetros del Préstamo
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
                       Tasa de Interés (%)
                     </label>
                     <input
@@ -391,28 +412,28 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                       step="0.1"
                       value={interestRate}
                       onChange={(e) => {
-                        setInterestRate(e.target.value);
-                        setAnalysisResults(calculateLoanAnalysis(selectedUser));
+                        establecerTasaInteres(e.target.value);
+                        establecerResultadosAnalisis(calcularAnalisisPrestamo(selectedUser));
                       }}
                       className={`w-full px-3 py-2 rounded-md border ${
-                        darkMode 
+                        modoOscuro 
                           ? 'bg-gray-600 border-gray-500 text-white' 
                           : 'bg-white border-gray-300 text-gray-900'
                       } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
                       Plazo (Meses)
                     </label>
                     <select
                       value={termMonths}
                       onChange={(e) => {
-                        setTermMonths(e.target.value);
-                        setAnalysisResults(calculateLoanAnalysis(selectedUser));
+                        establecerPlazoMeses(e.target.value);
+                        establecerResultadosAnalisis(calcularAnalisisPrestamo(selectedUser));
                       }}
                       className={`w-full px-3 py-2 rounded-md border ${
-                        darkMode 
+                        modoOscuro 
                           ? 'bg-gray-600 border-gray-500 text-white' 
                           : 'bg-white border-gray-300 text-gray-900'
                       } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -425,7 +446,7 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                     </select>
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-2 ${modoOscuro ? 'text-gray-300' : 'text-gray-700'}`}>
                       % del Ahorro Prestable
                     </label>
                     <input
@@ -434,11 +455,11 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                       max="100"
                       value={loanPercentage}
                       onChange={(e) => {
-                        setLoanPercentage(e.target.value);
-                        setAnalysisResults(calculateLoanAnalysis(selectedUser));
+                        establecerPorcentajePrestamo(e.target.value);
+                        establecerResultadosAnalisis(calcularAnalisisPrestamo(selectedUser));
                       }}
                       className={`w-full px-3 py-2 rounded-md border ${
-                        darkMode 
+                        modoOscuro 
                           ? 'bg-gray-600 border-gray-500 text-white' 
                           : 'bg-white border-gray-300 text-gray-900'
                       } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -447,50 +468,50 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                 </div>
               </div>
 
-              {/* Results */}
+              {/* Resultados */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={`p-4 rounded-lg border-l-4 border-blue-500 ${darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-50'}`}>
+                <div className={`p-4 rounded-lg border-l-4 border-blue-500 ${modoOscuro ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-50'}`}>
                   <h4 className={`font-semibold mb-3 text-blue-600`}>
                     Resultados del Análisis
                   </h4>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Monto máximo del préstamo:</span>
+                      <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Monto máximo del préstamo:</span>
                       <span className={`font-bold text-blue-600`}>
-                        {formatCurrency(analysisResults.maxLoanAmount)}
+                        {formatearMoneda(analysisResults.maxLoanAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Cuota mensual:</span>
-                      <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {formatCurrency(analysisResults.monthlyPayment)}
+                      <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Cuota mensual:</span>
+                      <span className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                        {formatearMoneda(analysisResults.monthlyPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total a pagar:</span>
-                      <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {formatCurrency(analysisResults.totalPayment)}
+                      <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total a pagar:</span>
+                      <span className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                        {formatearMoneda(analysisResults.totalPayment)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total de intereses:</span>
+                      <span className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total de intereses:</span>
                       <span className="font-semibold text-green-600">
-                        {formatCurrency(analysisResults.totalInterest)}
+                        {formatearMoneda(analysisResults.totalInterest)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg border-l-4 border-green-500 ${darkMode ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'}`}>
+                <div className={`p-4 rounded-lg border-l-4 border-green-500 ${modoOscuro ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'}`}>
                   <h4 className={`font-semibold mb-3 text-green-600`}>
                     Recomendaciones
                   </h4>
                   <div className="space-y-2 text-sm">
-                    <div className={`p-2 rounded ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-                      <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className={`p-2 rounded ${modoOscuro ? 'bg-gray-700' : 'bg-white'}`}>
+                      <p className={`font-medium ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                         Capacidad de Pago
                       </p>
-                      <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                         {analysisResults.monthlyPayment <= selectedUser.totalSavings * 0.1 
                           ? '✅ Excelente capacidad de pago' 
                           : analysisResults.monthlyPayment <= selectedUser.totalSavings * 0.2
@@ -499,20 +520,20 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                         }
                       </p>
                     </div>
-                    <div className={`p-2 rounded ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-                      <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className={`p-2 rounded ${modoOscuro ? 'bg-gray-700' : 'bg-white'}`}>
+                      <p className={`font-medium ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                         Rentabilidad
                       </p>
-                      <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Ganancia de {formatCurrency(analysisResults.totalInterest)} en {termMonths} meses
+                      <p className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Ganancia de {formatearMoneda(analysisResults.totalInterest)} en {termMonths} meses
                       </p>
                     </div>
-                    <div className={`p-2 rounded ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-                      <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className={`p-2 rounded ${modoOscuro ? 'bg-gray-700' : 'bg-white'}`}>
+                      <p className={`font-medium ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                         Porcentaje Sugerido
                       </p>
-                      <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {getRecommendedLoanPercentage(selectedUser.totalSavings)}% del ahorro total
+                      <p className={`${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {obtenerPorcentajePrestamoRecomendado(selectedUser.totalSavings)}% del ahorro total
                       </p>
                     </div>
                   </div>
@@ -520,12 +541,12 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
               </div>
             </div>
 
-            {/* Actions */}
-            <div className={`px-6 py-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-end space-x-3`}>
+            {/* Acciones */}
+            <div className={`px-6 py-4 border-t ${modoOscuro ? 'border-gray-700' : 'border-gray-200'} flex justify-end space-x-3`}>
               <button
-                onClick={() => setShowAnalysisForm(false)}
+                onClick={() => establecerMostrarFormularioAnalisis(false)}
                 className={`px-4 py-2 rounded-md border ${
-                  darkMode 
+                  modoOscuro 
                     ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                 } transition-colors`}
@@ -533,10 +554,10 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                 Cerrar
               </button>
               <button
-                onClick={() => setShowConfirmationModal(true)}
+                onClick={() => establecerMostrarModalConfirmacion(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
-                <Plus size={16} />
+                <Mas size={16} />
                 <span>Crear Préstamo</span>
               </button>
             </div>
@@ -544,127 +565,127 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
         </div>
       )}
 
-      {/* Confirmation Modal */}
+      {/* Modal de Confirmación */}
       {showConfirmationModal && selectedUser && analysisResults && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`max-w-2xl w-full rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} max-h-[90vh] overflow-y-auto`}>
-            {/* Header */}
+          <div className={`max-w-2xl w-full rounded-lg shadow-xl ${modoOscuro ? 'bg-gray-800' : 'bg-white'} max-h-[90vh] overflow-y-auto`}>
+            {/* Encabezado */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-blue-600" />
+                  <Mas className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h3 className={`text-xl font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                     Confirmar Creación de Préstamo
                   </h3>
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                     Revisa los detalles antes de crear el préstamo
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Content */}
+            {/* Contenido */}
             <div className="p-6 space-y-6">
-              {/* User Info */}
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-50'} border ${darkMode ? 'border-blue-800' : 'border-blue-200'}`}>
+              {/* Información del Usuario */}
+              <div className={`p-4 rounded-lg ${modoOscuro ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-50'} border ${modoOscuro ? 'border-blue-800' : 'border-blue-200'}`}>
                 <h4 className={`font-semibold mb-3 text-blue-600 flex items-center`}>
                   👤 Información del Beneficiario
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nombre:</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Nombre:</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {selectedUser.name}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email:</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Email:</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {selectedUser.email}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado:</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Ahorrado:</p>
                     <p className="font-semibold text-green-600">
-                      {formatCurrency(selectedUser.totalSavings)}
+                      {formatearMoneda(selectedUser.totalSavings)}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nivel de Riesgo:</p>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getRiskLevel(selectedUser.totalSavings).bg} ${getRiskLevel(selectedUser.totalSavings).color}`}>
-                      {getRiskLevel(selectedUser.totalSavings).level}
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Nivel de Riesgo:</p>
+                    <span className={`px-2 py-1 text-xs rounded-full ${obtenerNivelRiesgo(selectedUser.totalSavings).bg} ${obtenerNivelRiesgo(selectedUser.totalSavings).color}`}>
+                      {obtenerNivelRiesgo(selectedUser.totalSavings).level}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Loan Details */}
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'} border ${darkMode ? 'border-green-800' : 'border-green-200'}`}>
+              {/* Detalles del Préstamo */}
+              <div className={`p-4 rounded-lg ${modoOscuro ? 'bg-green-900 bg-opacity-20' : 'bg-green-50'} border ${modoOscuro ? 'border-green-800' : 'border-green-200'}`}>
                 <h4 className={`font-semibold mb-3 text-green-600 flex items-center`}>
                   💰 Detalles del Préstamo
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Monto del Préstamo:</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Monto del Préstamo:</p>
                     <p className="font-bold text-green-600 text-lg">
-                      {formatCurrency(analysisResults.maxLoanAmount)}
+                      {formatearMoneda(analysisResults.maxLoanAmount)}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Tasa de Interés:</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Tasa de Interés:</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {analysisResults.interestRate}%
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Plazo:</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Plazo:</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
                       {analysisResults.termMonths} meses
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Cuota Mensual:</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Cuota Mensual:</p>
                     <p className="font-bold text-blue-600 text-lg">
-                      {formatCurrency(analysisResults.monthlyPayment)}
+                      {formatearMoneda(analysisResults.monthlyPayment)}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total a Pagar:</p>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {formatCurrency(analysisResults.totalPayment)}
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total a Pagar:</p>
+                    <p className={`font-semibold ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
+                      {formatearMoneda(analysisResults.totalPayment)}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total de Intereses:</p>
+                    <p className={`text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total de Intereses:</p>
                     <p className="font-semibold text-orange-600">
-                      {formatCurrency(analysisResults.totalInterest)}
+                      {formatearMoneda(analysisResults.totalInterest)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Important Notes */}
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-yellow-900 bg-opacity-20' : 'bg-yellow-50'} border ${darkMode ? 'border-yellow-800' : 'border-yellow-200'}`}>
+              {/* Notas Importantes */}
+              <div className={`p-4 rounded-lg ${modoOscuro ? 'bg-yellow-900 bg-opacity-20' : 'bg-yellow-50'} border ${modoOscuro ? 'border-yellow-800' : 'border-yellow-200'}`}>
                 <h4 className={`font-semibold mb-3 text-yellow-600 flex items-center`}>
-                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  <TrianguloAlerta className="h-5 w-5 mr-2" />
                   Información Importante
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className={`flex items-start space-x-2 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                  <div className={`flex items-start space-x-2 ${modoOscuro ? 'text-yellow-200' : 'text-yellow-800'}`}>
                     <span className="font-bold">•</span>
                     <span>El préstamo se creará inmediatamente y estará disponible en "Gestión de Préstamos"</span>
                   </div>
-                  <div className={`flex items-start space-x-2 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                  <div className={`flex items-start space-x-2 ${modoOscuro ? 'text-yellow-200' : 'text-yellow-800'}`}>
                     <span className="font-bold">•</span>
                     <span>Podrás registrar pagos desde la sección de gestión de préstamos</span>
                   </div>
-                  <div className={`flex items-start space-x-2 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                  <div className={`flex items-start space-x-2 ${modoOscuro ? 'text-yellow-200' : 'text-yellow-800'}`}>
                     <span className="font-bold">•</span>
                     <span>El usuario debe ser informado sobre las condiciones del préstamo</span>
                   </div>
-                  <div className={`flex items-start space-x-2 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                  <div className={`flex items-start space-x-2 ${modoOscuro ? 'text-yellow-200' : 'text-yellow-800'}`}>
                     <span className="font-bold">•</span>
                     <span>Se recomienda establecer fechas de vencimiento para cada cuota</span>
                   </div>
@@ -672,12 +693,12 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
               </div>
             </div>
 
-            {/* Actions */}
-            <div className={`px-6 py-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-end space-x-3`}>
+            {/* Acciones */}
+            <div className={`px-6 py-4 border-t ${modoOscuro ? 'border-gray-700' : 'border-gray-200'} flex justify-end space-x-3`}>
               <button
-                onClick={() => setShowConfirmationModal(false)}
+                onClick={() => establecerMostrarModalConfirmacion(false)}
                 className={`px-4 py-2 rounded-md border ${
-                  darkMode 
+                  modoOscuro 
                     ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                 } transition-colors`}
@@ -685,10 +706,10 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
                 Cancelar
               </button>
               <button
-                onClick={handleCreateLoan}
+                onClick={manejarCrearPrestamo}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
-                <Plus size={16} />
+                <Mas size={16} />
                 <span>Confirmar y Crear Préstamo</span>
               </button>
             </div>
@@ -697,8 +718,8 @@ El préstamo está disponible en la sección "Gestión de Préstamos" donde podr
       )}
 
       {users.length === 0 && (
-        <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          <Calculator className="h-16 w-16 mx-auto mb-4 opacity-50" />
+        <div className={`text-center py-12 ${modoOscuro ? 'text-gray-400' : 'text-gray-500'}`}>
+          <Calculadora className="h-16 w-16 mx-auto mb-4 opacity-50" />
           <p className="text-lg">No hay usuarios activos para analizar</p>
           <p className="text-sm">Los usuarios deben tener ahorros registrados para poder analizar préstamos</p>
         </div>
